@@ -9,7 +9,7 @@
 #define DOMAIN_PROTOCOLO_H_
 
 // Códigos de operacion
-enum OpCode {
+typedef enum{
 	// Supermercados
 	    OPC_ADD_SUPER, OPC_UPDATE_SUPER, OPC_DEL_SUPER, OPC_GET_ALL_SUPER,
 
@@ -20,7 +20,7 @@ enum OpCode {
 	    OPC_ADD_PRODUCTO, OPC_DEL_PROD, OPC_UPDATE_PRICE, OPC_UPDATE_STOCK_SUPER, OPC_GET_STOCK_SUPER,
 
 	    OPC_EXIT
-};
+} OpCode;
 
 // Estructura para enviar datos
 typedef struct {
