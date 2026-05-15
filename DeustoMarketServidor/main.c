@@ -141,7 +141,6 @@ int main(int argc, char *argv[]) {
             	        send(comm_socket, (char*)&dataEnvio, sizeof(SupermercadoData), 0);
             	    }
 
-            	    // 3. Enviamos un "Supermercado centinela" para avisar que hemos terminado
             	    // Ponemos el ID en -1 para que el cliente sepa que es el final
             	    SupermercadoData fin;
             	    fin.id_super = -1;
