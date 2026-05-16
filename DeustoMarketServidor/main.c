@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    // 1. Apertura de Base de Datos
+    // Apertura de Base de Datos
     result = sqlite3_open("BDD/deustomarket.db", &db);
     if (result != SQLITE_OK) {
         printf("Error: No se pudo abrir la base de datos: %s\n", sqlite3_errmsg(db));
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     }
     printf("Base de datos abierta correctamente.\n");
 
-    // 2. Creación del Socket
+    // Creación del Socket
     if ((conn_socket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
         printf("Could not create socket : %d", WSAGetLastError());
         sqlite3_close(db);
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     server.sin_family = AF_INET;
     server.sin_port = htons(SERVER_PORT);
 
-    // 3. Bind y Listen
+    // Bind y Listen
     if (bind(conn_socket, (struct sockaddr*) &server, sizeof(server)) == SOCKET_ERROR) {
         printf("Bind failed with error code: %d", WSAGetLastError());
         closesocket(conn_socket);
@@ -90,6 +90,47 @@ int main(int argc, char *argv[]) {
         printf("Operacion recibida: %d\n", opcionRecibida);
 
         switch(opcionRecibida) {
+
+        case OPC_LOGIN: {
+				LoginData datosCliente;
+				recv(comm_socket, (char*)&datosCliente, sizeof(LoginData), 0);
+				printf("Intento de login recibido para el usuario: %s\n", datosCliente.usuario);
+
+				FILE *fichero = fopen("Configuracion/credenciales.txt", "r");
+				int loginValido = 0; // 0 = Falso, 1 = Verdadero
+
+				if (fichero == NULL) {
+					printf("[ERROR] No se pudo abrir config.txt en el servidor.\n");
+				} else {
+					char linea[100];
+					char userConfig[30] = "";
+					char passConfig[30] = "";
+
+					while (fgets(linea, sizeof(linea), fichero)) {
+						if (strncmp(linea, "usuario=", 8) == 0) {
+							sscanf(linea, "usuario=%s", userConfig);
+						} else if (strncmp(linea, "contrasena=", 11) == 0) {
+							sscanf(linea, "contrasena=%s", passConfig);
+						}
+					}
+					fclose(fichero);
+
+					if (strcmp(datosCliente.usuario, userConfig) == 0 &&
+						strcmp(datosCliente.contrasena, passConfig) == 0) {
+						loginValido = 1; // Credenciales correctas
+					}
+				}
+
+				// Enviamos la respuesta de vuelta al cliente
+				send(comm_socket, (char*)&loginValido, sizeof(int), 0);
+
+				if (loginValido == 1) {
+					printf("Login EXITOSO para %s\n", datosCliente.usuario);
+				} else {
+					printf("Login FALLIDO para %s\n", datosCliente.usuario);
+				}
+				break;
+			}
 
             case OPC_ADD_SUPER: {
                 SupermercadoData data;
@@ -179,13 +220,6 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            case OPC_ADD_EMPLEADO: {
-                EmpleadoData data;
-                recv(comm_socket, (char*)&data, sizeof(EmpleadoData), 0);
-                printf("Recibida peticion Alta Empleado: %s\n", data.nombre_empleado);
-                // Aquí iría tu lógica de insert para empleados igual que los anteriores
-                break;
-            }
 
             default:
                 printf("Codigo de operacion no reconocido: %d\n", opcionRecibida);
@@ -193,7 +227,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // 5. Cierre y Limpieza
+    // Cierre y Limpieza
     closesocket(comm_socket);
     closesocket(conn_socket);
     sqlite3_close(db);
